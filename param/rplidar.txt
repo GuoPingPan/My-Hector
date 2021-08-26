@@ -1,0 +1,18 @@
+channel_type = serial
+#serial/tcp
+tcp_ip = 192.168.0.7
+#serial_baudrate = 115200
+hector_param_file = ../param/hector_slam.txt
+
+tcp_port = 20108
+serial_port = /dev/rplidar
+frame_id = laser_frame
+inverted = false 
+angle_compensate = false
+scan_mode = Boost
+
+#	Standard: max_distance: 8.0 m, Point number: 2.0K
+#	Express: max_distance: 8.0 m, Point number: 4.0K
+#	Boost: max_distance: 8.0 m, Point number: 8.0K
+#	Stability: max_distance: 8.0 m, Point number: 4.0K
+
