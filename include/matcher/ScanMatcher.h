@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _scanmatcher_h__
-#define _scanmatcher_h__
+#ifndef SCAN_MATCHER_H_
+#define SCAN_MATCHER_H_
 
 #include <Eigen/Geometry>
 #include "../scan/DataPointContainer.h"
@@ -40,16 +40,12 @@ template <typename ConcreteOccGridMapUtil>
 class ScanMatcher
 {
 public:
-    ScanMatcher()
-    {
-    }
+    ScanMatcher(){}
 
-    ~ScanMatcher()
-    {
-    }
+    ~ScanMatcher(){}
 
     /**
-     * 实际进行位姿估计的函数
+     * @brief 实际进行位姿估计的函数
      * @param beginEstimateWorld  位姿初值
      * @param gridMapUtil         网格地图工具,这里主要是用来做坐标变换
      * @param dataContainer       激光数据
@@ -98,7 +94,7 @@ public:
 
 protected:
     /**
-     *  高斯牛顿估计位姿
+     * @brief 高斯牛顿估计位姿
      * @param estimate      位姿初始值
      * @param gridMapUtil   网格地图相关计算工具
      * @param dataPoints    激光数据
@@ -147,6 +143,7 @@ protected:
     Eigen::Vector3f dTr;
     Eigen::Matrix3f H;
 };
-}
 
-#endif
+}// namespace hectorslam
+
+#endif// SCAN_MATCHER_H_

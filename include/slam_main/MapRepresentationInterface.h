@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _hectormaprepresentationinterface_h__
-#define _hectormaprepresentationinterface_h__
+#ifndef MAP_REPRESENTATION_INTERFACE_H_
+#define MAP_REPRESENTATION_INTERFACE_H_
 
 class GridMap;
 class ConcreteOccGridMapUtil;
@@ -37,7 +37,7 @@ namespace hectorslam
 {
     
 /**
- * 地图接口，定义了一系列地图操作的借口。类内函数均为纯虚函数（= 0）。
+ * @brief 地图接口，定义了一系列地图操作的借口。类内函数均为纯虚函数（= 0）。
  *
  * NOTE: 此为抽象基类，不能直接创建一个MapRepresentationInterface的对象。
  */
@@ -58,15 +58,17 @@ public:
 
     virtual void onMapUpdated() = 0;
 
-    /** 位姿计算 **/
+    /* 位姿计算 */
     virtual Eigen::Vector3f matchData(const Eigen::Vector3f &beginEstimateWorld, const DataContainer &dataContainer, Eigen::Matrix3f &covMatrix) = 0;
 
-    /** 地图更新 **/
+    /* 地图更新 */
     virtual void updateByScan(const DataContainer &dataContainer, const Eigen::Vector3f &robotPoseWorld) = 0;
 
     virtual void setUpdateFactorFree(float free_factor) = 0;
     virtual void setUpdateFactorOccupied(float occupied_factor) = 0;
-};
-}
 
-#endif
+};// class MapRepresentationInterface
+
+}// namespace hectorslam
+
+#endif// MAP_REPRESENTATION_INTERFACE_H_

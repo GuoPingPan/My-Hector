@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef GRIDMAPBASE_h_
-#define GRIDMAPBASE_h_
+#ifndef GRIDMAPBASE_H_
+#define GRIDMAPBASE_H_
 
 #include <Eigen/Geometry>
 #include <Eigen/LU>
@@ -101,7 +101,8 @@ protected:
     Eigen::Vector2i mapDimensions;
     Eigen::Vector2f mapLimitsf;
     float cellLength;
-};
+
+};// class MapDimensionProperties
 
 namespace hectorslam
 {
@@ -480,7 +481,9 @@ protected:
 
 private:
     int lastUpdateIndex;
-};
-}
 
-#endif
+};// class GridMapBase
+
+}// namespace hectorslam
+
+#endif// GRIDMAPBASE_H_

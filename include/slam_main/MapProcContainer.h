@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _hectormapproccontainer_h__
-#define _hectormapproccontainer_h__
+#ifndef MAP_PROCCONTATIANER_H_
+#define MAP_PROCCONTATIANER_H_
 
 #include "../map/GridMap.h"
 #include "../map/OccGridMapUtilConfig.h"
@@ -42,7 +42,11 @@ namespace hectorslam
 {
 
 /**
- * 图层对象,包含多个图层及其对应处理工具、匹配方法、互斥锁等。
+ * @brief 图层对象,包含多个图层及其对应处理工具、匹配方法、互斥锁等。
+ * @param gridMap GridMap*  地图网格
+ * @param gridMapUtil OccGridMapUtilConfig<GridMap>* 网格工具、设置
+ * @param scanMatcher ScanMatcher<OccGridMapUtilConfig<GridMap>>* 地图对应匹配模块
+ * @param mapMutex MapLockerInterface* 地图锁，修改地图时，需要加锁避免多线程资源访问冲突
  */
 class MapProcContainer
 {
@@ -105,12 +109,12 @@ public:
     }
 
     /**
-   * 给定位姿初值，估计当前scan在当前图层中的位姿 ---- 位姿为世界系下的pose 、  dataContainer应与当前图层尺度匹配
+   * @brief 给定位姿初值，估计当前scan在当前图层中的位姿 ---- 位姿为世界系下的pose 、  dataContainer应与当前图层尺度匹配
    * @param beginEstimateWorld  世界系下的位姿
    * @param dataContainer       激光数据
    * @param covMatrix           scan-match的不确定性 -- 协方差矩阵
    * @param maxIterations       最大的迭代次数
-   * @return
+   * @return newPoseEstimateWorld
    */
     Eigen::Vector3f matchData(const Eigen::Vector3f &beginEstimateWorld, const DataContainer &dataContainer, Eigen::Matrix3f &covMatrix, int maxIterations)
     {
@@ -118,7 +122,7 @@ public:
     }
 
     /**
-   * 有Scan数据更新地图
+   * @brief 有Scan数据更新地图
    * @param dataContainer   当前scan激光数据
    * @param robotPoseWorld  当前scan世界系下位姿
    */
@@ -142,7 +146,9 @@ public:
     OccGridMapUtilConfig<GridMap> *gridMapUtil;              // 网格工具、设置
     ScanMatcher<OccGridMapUtilConfig<GridMap>> *scanMatcher; // 地图对应匹配模块
     MapLockerInterface *mapMutex;                            // 地图锁，修改地图时，需要加锁避免多线程资源访问冲突。
-};
-}
 
-#endif
+};// class MapProcContainer
+
+}// namespace hectorslam
+
+#endif// MAP_PROCCONTATIANER_H_

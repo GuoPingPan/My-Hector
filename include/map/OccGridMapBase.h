@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _LESSON4_OCCGRIDMAPBASE_h_
-#define _LESSON4_OCCGRIDMAPBASE_h_
+#ifndef OCC_GRIDMAP_BASE_H_
+#define OCC_GRIDMAP_BASE_H_
 
 #include "GridMapBase.h"
 
@@ -334,8 +334,9 @@ protected:
     int currUpdateIndex;
     int currMarkOccIndex;
     int currMarkFreeIndex;
-};
 
-} // namespace hectorslam
+};// class OccGridMapBase 
 
-#endif
+}// namespace hectorslam
+
+#endif// OCC_GRIDMAP_BASE_H_

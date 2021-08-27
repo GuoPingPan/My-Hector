@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef __OccGridMapUtilConfig_h_
-#define __OccGridMapUtilConfig_h_
+#ifndef OCC_GRIDMAP_UTILCONFIG_H_
+#define OCC_GRIDMAP_UTILCONFIG_H_
 
 #include "OccGridMapUtil.h"
 
@@ -56,4 +56,4 @@ namespace hectorslam
 
 } // namespace hectorslam
 
-#endif
+#endif// OCC_GRIDMAP_UTILCONFIG_H_

@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _hectormaprepmultimap_h__
-#define _hectormaprepmultimap_h__
+#ifndef MAP_REP_MULTIMAP_H_
+#define MAP_REP_MULTIMAP_H_
 
 #include "MapRepresentationInterface.h"
 #include "MapProcContainer.h"
@@ -43,19 +43,21 @@ namespace hectorslam
 {
 
 /**
- * 金字塔（多分辨率）地图对象。
+ * @brief 金字塔（多分辨率）地图对象
+ * @param mapContainer std::vector<MapProcContainer> 不同图层的地图对象
+ * @param dataContainers std::vector<DataContainer> 不同图层对应的激光数据
  */
 class MapRepMultiMap : public MapRepresentationInterface
 {
 
 public:
     /**
-     * 构建金字塔地图，第一层地图格子代表的物理尺寸最小，格子数最多，地图精度高；层数越高，格子代表的物理尺寸越大，格子数越少，精度越低。
+     * @brief 构建金字塔地图，第一层地图格子代表的物理尺寸最小，格子数最多，地图精度高；层数越高，格子代表的物理尺寸越大，格子数越少，精度越低。
      * @param mapResolution 首层地图分辨率，每个格子代表的物理尺寸边长
-     * @param mapSizeX
+     * @param mapSizeX      珊格地图大小
      * @param mapSizeY
-     * @param numDepth
-     * @param startCoords
+     * @param numDepth      多分辨率地图层数
+     * @param startCoords   地图起点坐标比例，一般取0.5，指的是中心点
      */
     MapRepMultiMap(float mapResolution, int mapSizeX, int mapSizeY,
                    unsigned int numDepth,
@@ -64,7 +66,7 @@ public:
         Eigen::Vector2i resolution(mapSizeX, mapSizeY); // 第一层地图大小
 
         float totalMapSizeX = mapResolution * static_cast<float>(mapSizeX); // 实际物理尺寸范围 如 480*0.05m = 24m
-        float mid_offset_x = totalMapSizeX * startCoords.x();   // startCoord.x .y =0.5 就是地图中间位置实际坐标
+        float mid_offset_x = totalMapSizeX * startCoords.x();   // startCoord.x()=startCoord.y()=0.5 就是地图中间位置实际坐标
 
         float totalMapSizeY = mapResolution * static_cast<float>(mapSizeY);
         float mid_offset_y = totalMapSizeY * startCoords.y();
@@ -92,50 +94,49 @@ public:
         dataContainers.resize(numDepth - 1);
     }
 
-    // jia zai di tu
+   /**
+     * @brief 纯定位地图初始化，与上面构造函数不同的点在于要加载地图数据
+     * @param mapResolution 首层地图分辨率，每个格子代表的物理尺寸边长
+     * @param numDepth      多分辨率地图层数
+     * @param startCoords   地图起点坐标比例，一般取0.5，指的是中心点
+     * @param mapPath       地图路径
+     */
     MapRepMultiMap(float mapResolution,unsigned int numDepth,
                    const Eigen::Vector2f& startCoords,
-                   std::string imagePath)
+                   std::string mapPath)
     {
-        cv::Mat image = cv::imread(imagePath,-1);
-        if(!image.data){
-            std::cerr<<"Error: the imagePath dose not exit."<<std::endl;
+        cv::Mat map = cv::imread(mapPath,-1);
+        if(!map.data){
+            std::cerr<<"Error, the mapPath dose not exit."<<std::endl;
             exit(EXIT_FAILURE);
         }
 
-        std::cerr<<"load image finished"<<std::endl;
-        std::cerr<<imagePath<<std::endl;
+        std::cerr<<"Success, load map finished"<<std::endl;
 
-
-        Eigen::Vector2i resolution(image.rows,image.cols); // 第一层地图大小
-        float totalMapSizeX = mapResolution * static_cast<float>(image.rows); // 实际物理尺寸范围 如 480*0.05m = 24m
+        Eigen::Vector2i resolution(map.rows,map.cols); // 第一层地图大小
+        float totalMapSizeX = mapResolution * static_cast<float>(map.rows); // 实际物理尺寸范围 如 480*0.05m = 24m
         float mid_offset_x = totalMapSizeX * startCoords.x();   // startCoord.x .y =0.5 jiu shi di tu zhong jian
 
-        float totalMapSizeY = mapResolution * static_cast<float>(image.cols);
+        float totalMapSizeY = mapResolution * static_cast<float>(map.cols);
         float mid_offset_y = totalMapSizeY * startCoords.y();
 
         for (unsigned int i = 0; i < numDepth; ++i)
         {
-            std::cout<<"HectorSLAM map level "<< i <<": cellLength: "
-            << mapResolution<<"res x:"<<resolution.x()<<"res y:"<<resolution.y()<<std::endl;
-            cv::imshow("fb",image);
-            cv::waitKey(0);
+            std::cout << "HectorSM map level " << i << ": cellLength: " << mapResolution << " res x:" << resolution.x() << " res y: " << resolution.y() << "\n";
 
             /** 创建网格地图 **/
             GridMap *gridMap = new hectorslam::GridMap(mapResolution, resolution, Eigen::Vector2f(mid_offset_x, mid_offset_y));
             for(int j = 0;j < resolution.x();++j){
-                uchar* data = image.ptr<uchar>(j);
+                uchar* data = map.ptr<uchar>(j);
                 for(int k = 0;k < resolution.y();++k){
                     if(180<=data[k]&&data[k]<=255){       // 白色 Free
-//                        gridMap->updateSetFree(i*resolution.y()+j);
-                        gridMap->getCell(j,k).set(-0.176);
+                        gridMap->updateSetFree(i*resolution.y()+j); 
                     }
                     else if(0<=data[k]&&data[k]<=100){    // 黑色 Occ
-//                        gridMap->updateSetOccupied(i*resolution.y()+j);
-                        gridMap->getCell(j,k).set(0.954);
+                       gridMap->updateSetOccupied(i*resolution.y()+j);
                     }
                     else{
-                        gridMap->getCell(j,k).set(0); // >0 为 Occ < 0 为 Free
+                        gridMap->getCell(j,k).set(0);    // >0 为 Occ < 0 为 Free
                     }
                 }
             }
@@ -143,15 +144,14 @@ public:
             OccGridMapUtilConfig<GridMap> *gridMapUtil = new OccGridMapUtilConfig<GridMap>(gridMap);
             /** 匹配工具 **/
             ScanMatcher<OccGridMapUtilConfig<GridMap>> *scanMatcher = new hectorslam::ScanMatcher<OccGridMapUtilConfig<GridMap>>();
-
             /** 上述三个内容统一放在MapProContainer容器中 **/
             mapContainer.push_back(MapProcContainer(gridMap, gridMapUtil, scanMatcher));
 
             // @todo 这样的放缩不知道合不合适
             resolution /= 2;       // 地图格子行、列格子数减半
             cv::Mat out;
-            cv::resize(image,out,cv::Size2i(resolution.x(),resolution.y()));
-            image = out;
+            cv::resize(map,out,cv::Size2i(resolution.x(),resolution.y()));
+            map = out;
             mapResolution *= 2.0f; // 地图精度减半
         }
 
@@ -168,7 +168,7 @@ public:
         for (unsigned int i = 0; i < size; ++i)
         {
             mapContainer[i].cleanup();
-        } /// 析构函数，需释放使用的动态内存
+        } // 析构函数，需释放使用的动态内存
     }
 
     virtual void reset()
@@ -188,15 +188,15 @@ public:
 
     virtual void addMapMutex(int i, MapLockerInterface *mapMutex)
     {
-        mapContainer[i].addMapMutex(mapMutex); /// 给每层地图添加互斥锁
+        mapContainer[i].addMapMutex(mapMutex); // 给每层地图添加互斥锁
     }
 
     MapLockerInterface *getMapMutex(int i)
     {
-        return mapContainer[i].getMapMutex(); /// 获取指定层的地图锁
+        return mapContainer[i].getMapMutex(); // 获取指定层的地图锁
     }
 
-    virtual void onMapUpdated() /// 提示地图已经得到更新，cache中的临时数据无效
+    virtual void onMapUpdated() // 提示地图已经得到更新，cache中的临时数据无效
     {
         unsigned int size = mapContainer.size();
 
@@ -215,7 +215,7 @@ public:
      */
     virtual Eigen::Vector3f matchData(const Eigen::Vector3f &beginEstimateWorld, const DataContainer &dataContainer, Eigen::Matrix3f &covMatrix)
     {
-        size_t size = mapContainer.size();  //这里 size = numDepth 
+        size_t size = mapContainer.size();  // 这里 size = numDepth 
 
         Eigen::Vector3f tmp(beginEstimateWorld);
 
@@ -223,10 +223,9 @@ public:
         // 从分辨率最低层开始算，下标越后，精度越低 
         for (int index = size - 1; index >= 0; --index)
         {
-            //std::cout << " m " << i;
             if (index == 0)
             {
-                tmp = (mapContainer[index].matchData(tmp, dataContainer, covMatrix, 5)); /// 输入数据dataContainer 对应 mapContainer[0]
+                tmp = (mapContainer[index].matchData(tmp, dataContainer, covMatrix, 5)); // 输入数据dataContainer 对应 mapContainer[0]
             }
             else
             {
@@ -235,7 +234,7 @@ public:
                 // mapContainer[index] 对 1.0 / pow(2.0, static_cast<double>(index)
                 dataContainers[index - 1].setFrom(dataContainer, static_cast<float>(1.0 / pow(2.0, static_cast<double>(index))));
                 tmp = (mapContainer[index].matchData(tmp, dataContainers[index - 1], covMatrix, 3));
-                /// dataContainers[i]对应mapContainer[i+1]
+                // dataContainers[i]对应mapContainer[i+1]
             }
         }
         return tmp;
@@ -252,18 +251,16 @@ public:
 
         for (unsigned int i = 0; i < size; ++i)
         {
-            //std::cout << " u " <<  i;
             if (i == 0)
             {
                 mapContainer[i].updateByScan(dataContainer, robotPoseWorld);
             }
             else
             {
-                // zai match data li mian yi jing sheng cheng le
+                // dataContainers[] 在matchData里面生成
                 mapContainer[i].updateByScan(dataContainers[i - 1], robotPoseWorld);
             }
         }
-        //std::cout << "\n";
     }
 
     /** 设置网格为free状态的概率 **/
@@ -290,9 +287,11 @@ public:
     }
 
 protected:
-    std::vector<MapProcContainer> mapContainer; /// 不同图层的地图对象
-    std::vector<DataContainer> dataContainers;  /// 不同图层对应的激光数据
-};
+    std::vector<MapProcContainer> mapContainer; // 不同图层的地图对象
+    std::vector<DataContainer> dataContainers;  // 不同图层对应的激光数据
+
+};// class MapRepMultiMap
+
 } // namespace hectorslam
 
-#endif
+#endif// MAP_REP_MULTIMAP_H_

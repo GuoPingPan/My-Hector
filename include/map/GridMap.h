@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _LESSON4_GRIDMAP_h_
-#define _LESSON4_GRIDMAP_h_
+#ifndef GRIDMAP_H_
+#define GRIDMAP_H_
 
 #include "OccGridMapBase.h"
 
@@ -87,11 +87,12 @@ public:
 public:
     float logOddsVal; ///< The log odds representation of occupancy probability.
     int updateIndex;
-};
+
+};// class LogOddsCell
 
 /**
- * Provides functions related to a log odds of occupancy probability respresentation for cells in a occupancy grid map.
- * 提供处理 log odds的工具
+ * @brief Provides functions related to a log odds of occupancy probability respresentation for cells in a occupancy grid map.
+ *        提供处理 log odds的工具
  */
 class GridMapLogOddsFunctions
 {
@@ -169,7 +170,8 @@ protected:
 
     float logOddsOccupied; /// < The log odds representation of probability used for updating cells as occupied
     float logOddsFree;     /// < The log odds representation of probability used for updating cells as free
-};
+
+};// class GridMapLogOddsFunctions
 
 
 namespace hectorslam {
@@ -180,4 +182,4 @@ typedef OccGridMapBase<LogOddsCell, GridMapLogOddsFunctions> GridMap;
 
 }
 
-#endif
+#endif// GRIDMAP_H_

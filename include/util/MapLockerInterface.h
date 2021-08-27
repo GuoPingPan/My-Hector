@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef maplockerinterface_h__
-#define maplockerinterface_h__
+#ifndef MAP_LOCKER_INTERFACE_H_
+#define MAP_LOCKER_INTERFACE_H_
 
 class MapLockerInterface
 {
@@ -36,4 +36,4 @@ public:
   virtual void unlockMap() = 0;
 };
 
-#endif
+#endif// MAP_LOCKER_INTERFACE_H_

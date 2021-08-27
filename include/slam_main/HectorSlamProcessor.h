@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _hectorslamprocessor_h__
-#define _hectorslamprocessor_h__
+#ifndef HECTOR_SLAM_PROCESSOR_H_
+#define HECTOR_SLAM_PROCESSOR_H_
 
 #include "../map/GridMap.h"
 #include "../map/OccGridMapUtilConfig.h"
@@ -47,18 +47,34 @@ namespace hectorslam
 {
 
 /**
-* Hector 系统处理核，是Hector Slam的接口。其包含三个部分的函数：
-* 1. 关键的 update() 函数，用于处理新的激光数据并更新slam状态，reset()用于重置hector系统；
-* 2. get**()函数，获取hector的系统状态，包括pose、map及其他参数；
-* 3. set 函数，用于设置地图部分参数，直接操作的是MapRep。
+* @details Hector 系统处理核，是Hector Slam的接口。其包含三个部分的函数：
+*          1. 关键的 update() 函数，用于处理新的激光数据并更新slam状态，reset()用于重置hector系统；
+*          2. get**()函数，获取hector的系统状态，包括pose、map及其他参数；
+*          3. set 函数，用于设置地图部分参数，直接操作的是MapRep。
+* @param MapRep 地图容器,最主要的一个类
 */
 class HectorSlamProcessor
 {
 public:
-    HectorSlamProcessor(float mapResolution, int mapSizeX, int mapSizeY,
-              const Eigen::Vector2f &startCoords,int multi_res_size,
-              bool prue_localization=false,std::string mapPath="") //纯定位和地图路径
-    {
+
+    /**
+     * @brief HectorSlamProcessor初始化，完成地图容器的构建
+     * @param[in] mapResolution           地图分辨率
+     * @param[in] mapSizeX                珊格地图尺寸
+     * @param[in] mapSizeY 
+     * @param[in] startCoords             地图起点坐标比例，一般取0.5，指的是中心点
+     * @param[in] multi_res_size          多分辨率地图层数
+     * @param[in] prue_localization=false 纯定位
+     * @param[in] mapPath=""              地图加载路径
+    */
+
+    HectorSlamProcessor(float mapResolution,                 
+                        int mapSizeX, int mapSizeY,         
+                        const Eigen::Vector2f &startCoords, 
+                        int multi_res_size,                  
+                        bool prue_localization=false,       
+                        std::string mapPath=""              
+                        ){
         prueLocalization = prue_localization;
 
         if(prueLocalization){
@@ -67,13 +83,12 @@ public:
         else{
             mapRep = new MapRepMultiMap(mapResolution, mapSizeX, mapSizeY, multi_res_size, startCoords);
         }
-        /* 构建初始地图 */
 
         this->reset();
-        /* 设置进行地图更新的位姿变化阈值 **/
+        /* 设置进行地图更新的位姿变化初始阈值，在HectorSLAM初始化时会再次更新 */
         this->setMapUpdateMinDistDiff(0.4f * 1.0f);
         this->setMapUpdateMinAngleDiff(0.13f * 1.0f);
-        std::cout << "the processor yes "<<std::endl;
+
     }
 
     ~HectorSlamProcessor()
@@ -82,56 +97,55 @@ public:
     }
 
     /**
-    * 对每一帧的激光数据进行处理
-    * @param dataContainer  激光数据存储容器，坐标已转换成地图尺度，为地图中激光系的坐标
-    * @param poseHintWorld  激光系在地图中的初始pose
-    * @param prue_mapping 是否进行匹配
+    * @brief 对每一帧的激光数据进行处理
+    * @param[in] dataContainer  激光数据存储容器，坐标已转换成地图尺度，为地图中激光系的坐标
+    * @param[in] poseHintWorld  激光坐标系在地图中的初始pose，真实世界坐标系下的位姿
+    * @param[in] prue_mapping   是否纯建图
     */
     void update(const DataContainer &dataContainer, const Eigen::Vector3f &poseHintWorld, bool prue_mapping = false)
     {
-        //std::cout << "\nph:\n" << poseHintWorld << "\n";
 
-        /** 1. 位姿匹配 **/
-        // poseHintWorld shi jie zuo biao xia de wei zi
-        // newPoseEstimateWorld ye shi shi jie zuo biao xi xia de
+        /* 位姿匹配 */
+        // newPoseEstimateWorld 也是真实世界坐标系下的位姿
         Eigen::Vector3f newPoseEstimateWorld;
 
-        if (!prue_mapping)
-        {
+        if (!prue_mapping){
             // 进行 scan to map 的地方
             newPoseEstimateWorld = (mapRep->matchData(poseHintWorld, dataContainer, lastScanMatchCov));
         }
-        else
-        {
+        else{
             newPoseEstimateWorld = poseHintWorld;
         }
 
         lastScanMatchPose = newPoseEstimateWorld;
 
+        /* 纯定位 */
         if(prueLocalization){
             lastMapUpdatePose = newPoseEstimateWorld;
             return;
         }
 
+        /* 非纯定位，地图更新 */
         else{
-            /** 2.地图更新 **/
-            // mei you geng xin newPoseEstimateWorld
+
+            // newPoseEstimateWorld 没有经过更新
             if (util::poseDifferenceLargerThan(newPoseEstimateWorld, lastMapUpdatePose, paramMinDistanceDiffForMapUpdate, paramMinAngleDiffForMapUpdate) || prue_mapping)
             {
                 // 仅在位姿变化大于阈值 或者 prue_mapping为真 的时候进行地图更新
                 mapRep->updateByScan(dataContainer, newPoseEstimateWorld);
                 mapRep->onMapUpdated();
-                lastMapUpdatePose = newPoseEstimateWorld;
+                lastMapUpdatePose = newPoseEstimateWorld; // =  lastScanMatchPose
             }
         }
     }
 
-    /** slam系统重置 **/
+    /* slam系统重置 */
     void reset()
     {
         lastMapUpdatePose = Eigen::Vector3f(FLT_MAX, FLT_MAX, FLT_MAX); //#include<float.h>
         lastScanMatchPose = Eigen::Vector3f::Zero();
-        //重置地图
+        
+        /* 纯定位加载地图后无需重置 */
         if(prueLocalization)    return;
 
         mapRep->reset();
@@ -163,13 +177,15 @@ protected:
 
     Eigen::Vector3f lastMapUpdatePose;  // 根据地图更新后得到的位姿
     Eigen::Vector3f lastScanMatchPose;  // 匹配得到的位姿
-    Eigen::Matrix3f lastScanMatchCov;
+    Eigen::Matrix3f lastScanMatchCov;   // 地图协方差矩阵
 
     float paramMinDistanceDiffForMapUpdate;
     float paramMinAngleDiffForMapUpdate;
 
     bool prueLocalization;
-};
-}
 
-#endif
+};// class HectorSlamProcessor
+
+}// namespace hectorslam
+
+#endif// HECTOR_SLAM_PROCESSOR_H_

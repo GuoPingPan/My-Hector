@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef __GridMapCacheArray_h_
-#define __GridMapCacheArray_h_
+#ifndef GRIDMAP_CACHEARRAY_H_
+#define GRIDMAP_CACHEARRAY_H_
 
 #include <Eigen/Core>
 
@@ -39,10 +39,8 @@ public:
 };
 
 /**
- * 网格缓存，类似于计算机的cache，保存最近访问过的网格的概率值（非logOddsVal值）。
- * 避免重复访问同一网格时，重复计算其概率值。（Cell中只保存了logOddsVal值）
- *
- *
+ * @details 网格缓存，类似于计算机的cache，保存最近访问过的网格的概率值（非logOddsVal值）。
+ *          避免重复访问同一网格时，重复计算其概率值。（Cell中只保存了logOddsVal值）
  * Caches filtered grid map accesses in a two dimensional array of the same size as the map.
  */
 class GridMapCacheArray
@@ -168,6 +166,7 @@ protected:
     int currCacheIndex;           ///< The cache iteration index value
 
     Eigen::Vector2i arrayDimensions; ///< The size of the array
-};
 
-#endif
+};// class GridMapCacheArray
+
+#endif// GRIDMAP_CACHEARRAY_H_

@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef __OccGridMapUtil_h_
-#define __OccGridMapUtil_h_
+#ifndef OCC_GRIDMAP_UTIL_H_
+#define OCC_GRIDMAP_UTIL_H_
 
 #include <cmath>
 
@@ -473,7 +473,9 @@ protected:
     int size; // 未用?
 
     float mapObstacleThreshold; //// 作用是啥??????
-};
+
+};// class OccGridMapUtil
+
 } // namespace hectorslam
 
-#endif
+#endif// OCC_GRIDMAP_UTIL_H_

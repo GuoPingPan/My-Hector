@@ -26,25 +26,23 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#include "hector_slam.h"
-
+#include "Hector_Slam.h"
 #include "map/GridMap.h"
-
 #include "util/HectorMapMutex.h"
 
 /**
- * @detail 这里分为三种模式：SLAM，PrueLocalization，PrueMapping
- *  1.SLAM（同时定位与建图） 初始位置start_estimate 雷达输入scan 通过slamProcessor完成位置修正和建图
- *  2.PrueLocalization（纯定位模式）初始位置start_estimate 雷达输入scan 地图输入map_path update完成定位，不更新地图
- *  3.PrueMapping（纯建图）updata时直接使用输入的初始位置和雷达输入scan完成建图
- * 
+ * @details 这里分为三种模式：SLAM，PrueLocalization，PrueMapping
+ *          1.SLAM（同时定位与建图） 初始位置start_estimate 雷达输入scan 通过slamProcessor完成位置修正和建图
+ *          2.PrueLocalization（纯定位模式）初始位置start_estimate 雷达输入scan 地图输入map_path update完成定位，不更新地图
+ *          3.PrueMapping（纯建图）updata时直接使用输入的初始位置和雷达输入scan完成建图
+ * @param[in] filename 参数配置文件
 */
 HectorSLAM::HectorSLAM(std::string filename){
 
     InitParams(filename);
 
     if(state_ == SLAM){
-        std::cout<< "SLAM"<<endl; 
+        std::cout<<"SLAM"<<endl; 
         slamProcessor = new hectorslam::HectorSlamProcessor(
             static_cast<float>(p_map_resolution_),           //地图最高分辨率
             p_map_size_, p_map_size_,                        //地图的尺寸 像素大小
@@ -53,7 +51,7 @@ HectorSLAM::HectorSLAM(std::string filename){
 
     }
     else if(state_ == PrueLocalization){
-        std::cout<< "PrueLocalization"<<endl;
+        std::cout<<"PrueLocalization"<<endl;
         slamProcessor = new hectorslam::HectorSlamProcessor(
             static_cast<float>(p_map_resolution_),
             p_map_size_, p_map_size_,
@@ -63,7 +61,7 @@ HectorSLAM::HectorSLAM(std::string filename){
 
     }
     else if(state_ == PrueMapping){
-
+        std::cout<<"PrueMapping"<<endl;
         prue_mapping_ = true;    // true表示开启纯建图模式
 
         slamProcessor = new hectorslam::HectorSlamProcessor(
@@ -73,8 +71,8 @@ HectorSLAM::HectorSLAM(std::string filename){
             p_map_multi_res_levels_);
     }
     else{
-        std::cerr<<"the hector_state is not exist."<<std::endl;
-        std::cerr<<"please set the 'state = SLAM or PrueLocalization or PrueMapping.' "<<std::endl;
+        std::cerr<<"Error, the hector_state is not exist."<<
+        " Please set the 'state = SLAM or PrueLocalization or PrueMapping.' "<<std::endl;
         exit(EXIT_FAILURE);
     }
     slamProcessor->setUpdateFactorFree(p_update_factor_free_);
@@ -82,23 +80,11 @@ HectorSLAM::HectorSLAM(std::string filename){
     slamProcessor->setMapUpdateMinDistDiff(p_map_update_distance_threshold_);
     slamProcessor->setMapUpdateMinAngleDiff(p_map_update_angle_threshold_);
 
-
-    cout<<"the param of slam processor yes"<<endl;
-    // int mapLevels = slamProcessor->getMapLevels();
-
     // 最高分辨率的图进行加锁，为了可视化
     slamProcessor->addMapMutex(0, new HectorMapMutex()); 
 
-    // @todo 初始化位置接收
-    // initial_pose_sub_ = new message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>(node_, "initialpose", 2);
-    // initial_pose_filter_ = new tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>(*initial_pose_sub_, tf_, p_map_frame_, 2);
-    // initial_pose_filter_->registerCallback(boost::bind(&HectorSLAM::initialPoseCallback, this, _1));
-    cout<<"the mutex yes"<<endl;
-
-    // @todo 里程计接收
-
-    // 地图可视化
-     map_show_thread_ = new boost::thread(boost::bind(&HectorSLAM::showMap, this, p_map_pub_period_));
+    // 地图线程
+    map_show_thread_ = new boost::thread(boost::bind(&HectorSLAM::showMap, this, p_map_pub_period_));
 
 }
 
@@ -110,7 +96,10 @@ HectorSLAM::~HectorSLAM()
      delete map_show_thread_;
 }
 
-
+/**
+ * @brief 接收雷达数据并处理
+ * @param[in] scan 雷达数据 
+*/
 void HectorSLAM::scanCallback(const LaserScan& scan)
 {
     start_time_ = std::chrono::steady_clock::now();
@@ -128,25 +117,25 @@ void HectorSLAM::scanCallback(const LaserScan& scan)
         start_estimate = slamProcessor->getLastScanMatchPose();
     }
 
-    std::cout<<"scan"<<endl;
-
-    // scale 是第一层地图的分辨率 即mapResolution
+    // slamProcessor->getScaleToMap() 是第一层地图的分辨率 即mapResolution
     this->rosLaserScanToDataContainer(scan, laserScanContainer, slamProcessor->getScaleToMap());
     
     slamProcessor->update(laserScanContainer,start_estimate,prue_mapping_);
 
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-    std::chrono::duration<double> duration = 
-        std::chrono::duration_cast<std::chrono::duration<double>>(end_time-start_time_);
+    std::chrono::duration<double> duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time-start_time_);
 
     Eigen::Vector3f updated_pose_;
     updated_pose_ = slamProcessor->getLastScanMatchPose();
 
     cout<<"update pose : "<< updated_pose_ <<endl;
 
-    //@todo 后续位置的发布
 }
 
+/**
+ * @brief 参数初始化，在HectorSLAM中调用
+ * @param[in] filename 参数文件 
+*/
 void HectorSLAM::InitParams(std::string filename){
     ParamterReader paramterReader(filename);
     int state = paramterReader.getData<int>("state",0);
@@ -154,9 +143,10 @@ void HectorSLAM::InitParams(std::string filename){
     use_odom_ = paramterReader.getData<bool>("use_odom",false);
     p_map_pub_period_ = paramterReader.getData<double>("map_pub_period",10);
     load_map_path_ = paramterReader.getString("load_map_path",std::string());
+    prue_mapping_ = paramterReader.getData<bool>("prue_mapping",false);
+    
     p_map_resolution_ = paramterReader.getData<double>("map_resolution",0.05);
     p_map_size_ = paramterReader.getData<int>("map_size",2048);
-//    p_map_size_ = 1000;
     p_map_start_x_ = paramterReader.getData<double>("map_start_x",0.5);
     p_map_start_y_ = paramterReader.getData<double>("map_start_y",0.5);
     p_map_multi_res_levels_ = paramterReader.getData<int>("map_multi_res_levels",3);
@@ -164,26 +154,17 @@ void HectorSLAM::InitParams(std::string filename){
     p_update_factor_occupied_ = paramterReader.getData<double>("update_factor_occupied",0.9);
     p_map_update_distance_threshold_ = paramterReader.getData<double>("map_update_distance_thresh",0.4);
     p_map_update_angle_threshold_ = paramterReader.getData<double>("map_update_angle_thresh",0.9);
+    
     save_map_ = paramterReader.getData<bool>("save_map",false);
     save_map_path_ = paramterReader.getString("save_map_path",std::string());
-//    p_base_frame_ = paramterReader.getString("map_size","fas");
-//    p_map_frame_ = paramterReader.getData<int>("map_size",1024);
-//    p_odom_frame_ = paramterReader.getData<int>("map_size",1024);
-
-
-    prue_mapping_ = false;
-//    init_pose_set_ = true;
-//    init_pose_ = Eigen::Vector3f(0,0,0);
     shut_down_ = false;
-    cout<<"p_map_resolution_"<<p_map_resolution_<<endl;
-    cout<<"p_map_size_"<<p_map_size_<<endl;
-    cout<<"p_update_factor_free_"<<p_update_factor_free_<<endl;
-    cout<<"p_map_multi_res_levels_"<<p_map_multi_res_levels_<<endl;
-    cerr<<"save_map_:"<<save_map_<<std::endl;
-    cout<<"state_"<<state_<<std::endl;
-    lastGetMapUpdateIndex = 10000;
 }
 
+/**
+ * @brief 雷达格式转换
+ * @param[in] scan 参数文件
+ * @param[in out] dataContainer Hector处理的雷达格式 
+*/
 void HectorSLAM::rosLaserScanToDataContainer(const LaserScan& scan, hectorslam::DataContainer& dataContainer, float scaleToMap)
 {
   size_t size = scan.ranges.size();
@@ -210,41 +191,37 @@ void HectorSLAM::rosLaserScanToDataContainer(const LaserScan& scan, hectorslam::
   }
 }
 
+/**
+ * @brief 地图线程
+ * @param[in] p_map_pub_period_ 地图更新频率 
+*/
 void HectorSLAM::showMap(double p_map_pub_period_){
-    cv::Mat* map;
     while(1){
-        // cout<<lastGetMapUpdateIndex<<endl;
-        if (lastGetMapUpdateIndex != slamProcessor->getGridMap(0).getUpdateIndex()){ //防止一张图片更新两次
+        // 防止一张地图显示更新数次
+        if (lastGetMapUpdateIndex != slamProcessor->getGridMap(0).getUpdateIndex()){ 
             // 获得最高分辨率地图转化为图片
             const hectorslam::GridMap &gridMap = slamProcessor->getGridMap(1);
-            cout<<"grip map yes"<<endl;
             MapLockerInterface *mapMutex = slamProcessor->getMapMutex(0);
-            cout<<"mutex yes"<<endl;
 
-            // cv::Mat map(gridMap.getSizeX(), gridMap.getSizeY(), CV_8UC1);
-            delete map;
-            map = new cv::Mat(gridMap.getSizeX(), gridMap.getSizeY(), CV_8UC1);
-            cout<<"map yes"<<endl;
+            delete this->map;
+            this->map = new cv::Mat(gridMap.getSizeX(), gridMap.getSizeY(), CV_8UC1);
     
-
             if(mapMutex == nullptr)
-                cout<<"mutex not exit"<<endl;
+                cerr<<"Warn, mutex not exit"<<endl;
 
             if (mapMutex)
                 mapMutex->lockMap();
-            cout<<"mutex lock"<<endl;
 
-            // @todo 将占用设置为黑色，空闲设置为白色，那未知设置成？
             for (int i = 0; i < map->rows; ++i) {
                 uchar *data = map->ptr<uchar>(i);
                 for (int j = 0; j < map->cols; ++j) {
-                    if (gridMap.isFree(i, j)) {
+                    if (gridMap.isFree(i, j)) {         // 空闲为白
                         data[j] = 255;
                     }
-                    else if (gridMap.isOccupied(i, j)) {
+                    else if (gridMap.isOccupied(i, j)) {// 占用为黑
                         data[j] = 0;
                     }
-                    else{
+                    else{                               // 未知为灰
                         data[j] = 150;
                     }
                 }
@@ -255,22 +232,21 @@ void HectorSLAM::showMap(double p_map_pub_period_){
             if (mapMutex) {
                 mapMutex->unlockMap();
             }
-            cout<<"mutex unlock"<<endl;
-            cv::imshow("fa",*map);
+
+            cv::imshow("map",*map);
         }
-        if(cv::waitKey(1000/p_map_pub_period_)=='q'){
+        if(cv::waitKey(1000/p_map_pub_period_)=='q'){     // 按q退出程序
 
             if(save_map_){
                 cout<<"Saving map, please wait......"<<endl;
                 cv::imwrite(save_map_path_,*map);
-                cout<<"Save is finished"<<endl;
+                cout<<"Success, save map is finished"<<endl;
             }
 
-            cout<<"successfully shut down!"<<endl;
+            cout<<"Success, successfully shut down!"<<endl;
             shut_down_ = true;
             break;
         }
     }
 }
 
-//@todo 保存地图

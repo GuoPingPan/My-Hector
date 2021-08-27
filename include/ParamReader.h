@@ -6,6 +6,13 @@
 #include <fstream>
 #include <typeinfo>
 
+/**
+ * @brief 文件参数读取类 ParamterReader
+ * @param[in] filename
+ * @param[out] map<string,string> data; value:key
+*/
+
+
 using namespace std;
 class ParamterReader {
 public:
@@ -14,10 +21,10 @@ public:
     ParamterReader(string filename) {
         ifstream fin(filename.c_str());
         if (!fin) {
-            cerr << "the paramter file is not exist." << endl;
+            cerr << "Error, the paramter file is not exist." << endl;
             return;
         }
-        cout<<"reading from "<< filename.c_str()<<endl;
+        cout<<"Reading from : "<< filename.c_str()<<endl;
         while (!fin.eof()) {
             string str;
             getline(fin, str);
@@ -33,7 +40,7 @@ public:
             value = value.erase(0,value.find_first_not_of(" "));
             value = value.erase(value.find_last_not_of(" ")+1);
             data[key] = value;
-            cout<<key<<" : "<<value<<endl;
+            cout<<"\t"<<key<<" : "<<value<<endl;
             if (!fin.good())
                 break;
         }
@@ -48,7 +55,7 @@ public:
         map<string, string>::iterator it;
         it = data.find(key);
         if (it == data.end()) {
-            cout << "the data does not exist,use the default to fill it." << endl;
+            cout << "Warn, the data does not exist,use the default to fill it." << endl;
             cout << key <<endl;
             return default_value;
         }
@@ -80,6 +87,7 @@ public:
 
 public:
     map<string,string> data;
-};
+
+};// class ParamterReader
 
 #endif //PARAMTER_READER_H_

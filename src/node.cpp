@@ -33,11 +33,11 @@
  */
 
 #include "rplidar.h"
-#include "util/ParamReader.h"
+#include "ParamReader.h"
 #include <chrono>
 #include <cmath>
 #include <memory.h>
-#include "hector_slam.h"
+#include "Hector_Slam.h"
 
 #ifndef _countof
 #define _countof(_Array) (int)(sizeof(_Array) / sizeof(_Array[0]))
@@ -50,25 +50,10 @@ using namespace rp::standalone::rplidar;
 RPlidarDriver * drv = NULL;
 
 
-// @todo
-// struct LaserScan{
-//     float seq;  //数据类型 ID
-//     std::chrono::steady_clock::time_point stamp;
-//     std::string frame_id;
-//     float angle_min;
-//     float angle_max;
-//     float angle_increment;
-//     float time_increment;
-//     float scan_time;
-//     float range_min;
-//     float range_max;
-//     std::vector<float> ranges;
-//     std::vector<float> intensities;
-// };
-
-//该函数通过进程间通讯的方法进行改进
-LaserScan& publish_scan(//ros::Publisher *pub,
-                  rplidar_response_measurement_node_hq_t *nodes,
+/**
+ * @brief 转化雷达数据格式 rplidar node -> LaserScan
+ * */
+LaserScan& publish_scan(rplidar_response_measurement_node_hq_t *nodes,
                   size_t node_count,std::chrono::steady_clock::time_point start,
                   double scan_time, bool inverted,
                   float angle_min, float angle_max,
@@ -124,7 +109,9 @@ LaserScan& publish_scan(//ros::Publisher *pub,
 }
 
 
-
+/**
+ * @brief 获得rplidar雷达当前的信息
+ * */
 bool getRPLIDARDeviceInfo(RPlidarDriver * drv)
 {
     u_result     op_result;
@@ -143,7 +130,7 @@ bool getRPLIDARDeviceInfo(RPlidarDriver * drv)
     // print out the device serial number, firmware and hardware version number..
     cout<<"RPLIDAR S/N: "<<endl;
     for (int pos = 0; pos < 16 ;++pos) {
-        cout<<hex<<devinfo.serialnum[pos];
+        cout<<hex<<int(devinfo.serialnum[pos]);
     }
     cout<<endl;
     cout<<"Firmware Ver: "<< (devinfo.firmware_version>>8) <<"."<<(devinfo.firmware_version & 0xFF)<<endl;
@@ -151,6 +138,9 @@ bool getRPLIDARDeviceInfo(RPlidarDriver * drv)
     return true;
 }
 
+/**
+ * @brief 检查雷达是否正常运行
+ * */
 bool checkRPLIDARHealth(RPlidarDriver * drv)
 {
     u_result     op_result;
@@ -171,33 +161,9 @@ bool checkRPLIDARHealth(RPlidarDriver * drv)
     }
 }
 
-//bool stop_motor(std_srvs::Empty::Request &req,
-//                               std_srvs::Empty::Response &res)
-//{
-//  if(!drv)
-//       return false;
-//
-//  ROS_DEBUG("Stop motor");
-//  drv->stopMotor();
-//  return true;
-//}
-
-//bool start_motor(std_srvs::Empty::Request &req,
-//                               std_srvs::Empty::Response &res)
-//{
-//  if(!drv)
-//       return false;
-//  if(drv->isConnected())
-//  {
-//      ROS_DEBUG("Start motor");
-//      u_result ans=drv->startMotor();
-//
-//      ans=drv->startScan(0,1);
-//   }
-//   else printf("lost connection");
-//  return true;
-//}
-
+/**
+ * @brief 从rplidar雷达格式到LaserScan的角度转化
+ * */ 
 static float getAngle(const rplidar_response_measurement_node_hq_t& node)
 {
     return node.angle_z_q14 * 90.f / 16384.f;
@@ -215,8 +181,10 @@ int main(int argc, char * argv[]) {
     bool inverted = false;
     bool angle_compensate = false;
     float max_distance = 8.0;
-    //角度补偿
+    
+    // 角度补偿
     int angle_compensate_multiple = 1;//it stand of angle compensate at per 1 degree
+    
     std::string scan_mode;
     std::string hector_param_file;
 
@@ -236,7 +204,7 @@ int main(int argc, char * argv[]) {
 
     u_result    op_result;
 
-    // 创建 driver
+    /* 创建 driver */ 
     if(channel_type == "tcp"){
         drv = RPlidarDriver::CreateDriver(rp::standalone::rplidar::DRIVER_TYPE_TCP);
     }
@@ -249,7 +217,7 @@ int main(int argc, char * argv[]) {
         return -2;
     }
 
-    // 连接 connect
+    /* 连接 connect */ 
     if(channel_type == "tcp"){
         // make connection...
         if (IS_FAIL(drv->connect(tcp_ip.c_str(), (_u32)tcp_port))) {
@@ -269,26 +237,26 @@ int main(int argc, char * argv[]) {
 
     }
     
-    // get rplidar device info
+    /* 输出雷达设备信息 */ 
     if (!getRPLIDARDeviceInfo(drv)) {
         return -1;
     }
 
-    // check health...
+    /* 检查雷达健康状况 */ 
     if (!checkRPLIDARHealth(drv)) {
         RPlidarDriver::DisposeDriver(drv);
         return -1;
     }
 
-    // 开启 电机
+    /* 开启电机 */ 
     drv->startMotor();
 
+    /* 判断扫描工作模式 */
     RplidarScanMode current_scan_mode;
-    // 判断扫描模式
-    if (scan_mode.empty()) {    // 为空用典型扫描模式
+    if (scan_mode.empty()) {    // 未自定义扫描模式，则选择典型扫描模式
         op_result = drv->startScan(false /* not force scan */, true /* use typical scan mode */, 0, &current_scan_mode);
     }
-    else {                      // 检测当前模式是否合理
+    else {                      // 检测当前模式是否存在
         std::vector<RplidarScanMode> allSupportedScanModes;
         op_result = drv->getAllSupportedScanModes(allSupportedScanModes);
 
@@ -309,14 +277,14 @@ int main(int argc, char * argv[]) {
                 }
                 op_result = RESULT_OPERATION_FAIL;
             } 
-            else {                                  // 找到扫描模型开启
+            else {                                  // 匹配到扫描模型
                 op_result = drv->startScanExpress(false /* not force scan */, selectedScanMode, 0, &current_scan_mode);
             }
         }
     }
 
-    if(IS_OK(op_result))
-    {
+    /* 根据扫描模式信息计算角度补偿数据 */
+    if(IS_OK(op_result)){   // 打开成功，计算角度补偿数据
         //default frequent is 10 hz (by motor pwm value),  current_scan_mode.us_per_sample is the number of scan point per us
         angle_compensate_multiple = (int)(1000*1000/current_scan_mode.us_per_sample/10.0/360.0);
         //1000/us_per_sample=point/ms *1000 = point/s /10 = point/0.1s /360 = point/度  in一圈 
@@ -327,33 +295,35 @@ int main(int argc, char * argv[]) {
             <<" m, Point number: "<<(1000/current_scan_mode.us_per_sample)<<" K , angle_compensate: "<<angle_compensate_multiple 
             <<endl;
     }
-    else
-    {
+    else{                   // 打开失败
         cout<<"Can not start scan: %08x!"<<op_result<<endl;
     }
 
+    /* 初始化时间、hectorslam */
     std::chrono::steady_clock::time_point start_scan_time;
     std::chrono::steady_clock::time_point end_scan_time;
     std::chrono::duration<double> scan_duration;
 
     HectorSLAM hector_slam(hector_param_file);
 
-    while (1) { //@todo 这里要做一个类似于ros::ok()一样的东西
+    /* 循环接收数据并进行slam */
+    while (1) { 
         rplidar_response_measurement_node_hq_t nodes[360*8];
         size_t   count = _countof(nodes); //= 360*8
 
         start_scan_time = std::chrono::steady_clock::now();
-        op_result = drv->grabScanDataHq(nodes, count);
+        op_result = drv->grabScanDataHq(nodes, count);    // 获得雷达数据
         end_scan_time = std::chrono::steady_clock::now();
         scan_duration = std::chrono::duration_cast<std::chrono::duration<double>>(start_scan_time-end_scan_time);
 
-        if (op_result == RESULT_OK) {
-            op_result = drv->ascendScanData(nodes, count);
+        // 雷达数据ok
+        if (op_result == RESULT_OK) {   
+            op_result = drv->ascendScanData(nodes, count);// 去处头尾无效点
             float angle_min = DEG2RAD(0.0f);
             float angle_max = DEG2RAD(359.0f);
             if (op_result == RESULT_OK) {
-                if (angle_compensate) {
-                    //const int angle_compensate_multiple = 1;
+                if (angle_compensate) {     // 启动角度补偿
+                    // const int angle_compensate_multiple = 1;     // rplidar_ros默认注释
                     const int angle_compensate_nodes_count = 360*angle_compensate_multiple;
                     int angle_compensate_offset = 0;
                     rplidar_response_measurement_node_hq_t angle_compensate_nodes[angle_compensate_nodes_count];
@@ -384,10 +354,11 @@ int main(int argc, char * argv[]) {
                         break;
                     hector_slam.scanCallback(scan);
                 }
-                else {
+                else {                      // 不启动角度补偿
                     int start_node = 0, end_node = 0;
                     int i = 0;
                     // find the first valid node and last valid node
+                    // 找到第一个有效点和最后一个有效点，根据距离判断
                     while (nodes[i++].dist_mm_q2 == 0);
                     start_node = i-1;
                     i = count -1;
@@ -397,19 +368,22 @@ int main(int argc, char * argv[]) {
                     angle_min = DEG2RAD(getAngle(nodes[start_node]));
                     angle_max = DEG2RAD(getAngle(nodes[end_node]));
 
+                    // 雷达数据转化
                     LaserScan& scan = publish_scan(&nodes[start_node], end_node-start_node +1,
                              start_scan_time, scan_duration.count(), inverted,
                              angle_min, angle_max, max_distance,
                              frame_id);
 
-                    if(hector_slam.shut_down_)
-                        break;
-                    cout<<hector_slam.shut_down_<<endl;
+                    // 判断hector_slam状况
+                    if(hector_slam.shut_down_) break;
+                    
+                    // 进行slam
                     hector_slam.scanCallback(scan);
 
                }
             }
-            else if (op_result == RESULT_OPERATION_FAIL) {
+            // 雷达数据不ok，不进行slam
+            else if (op_result == RESULT_OPERATION_FAIL) {  
                 // All the data is invalid, just publish them
                 float angle_min = DEG2RAD(0.0f);
                 float angle_max = DEG2RAD(359.0f);
@@ -417,17 +391,11 @@ int main(int argc, char * argv[]) {
                              start_scan_time, scan_duration.count(), inverted,
                              angle_min, angle_max, max_distance,
                              frame_id);
-                if(hector_slam.shut_down_)
-                    break;
-                hector_slam.scanCallback(scan);
-
             }
         }
-        if(inverted ==1) break;
-        // ros::spinOnce();
     }
 
-    // done!
+    // 完成slam,关闭退出。
     drv->stopMotor();
     drv->stop();
     RPlidarDriver::DisposeDriver(drv);

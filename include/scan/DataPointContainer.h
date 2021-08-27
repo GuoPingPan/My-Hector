@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef _LESSON4_DATAPOINTCONTAINER_H_
-#define _LESSON4_DATAPOINTCONTAINER_H_
+#ifndef DATAPOINTCONTAINER_H_
+#define DATAPOINTCONTAINER_H_
 
 #include <vector>
 #include <iostream>
@@ -91,10 +91,11 @@ public:
 protected:
     std::vector<DataPointType> dataPoints;
     DataPointType origo;
-};
+
+};//class DataPointContainer
 
 typedef DataPointContainer<Eigen::Vector2f> DataContainer;
 
-} // namespace hectorslam
+}// namespace hectorslam
 
-#endif
+#endif// DATAPOINTCONTAINER_H_

@@ -1,5 +1,5 @@
-#ifndef hectormapmutex_h__
-#define hectormapmutex_h__
+#ifndef HECTOR_MAP_MUTEX_H_
+#define HECTOR_MAP_MUTEX_H_
 
 #include "util/MapLockerInterface.h"
 
@@ -19,6 +19,7 @@ public:
   }
 
   boost::mutex mapModifyMutex_;
+
 };
 
-#endif
+#endif// HECTOR_MAP_MUTEX_H_

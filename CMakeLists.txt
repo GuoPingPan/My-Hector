@@ -28,29 +28,35 @@ ${RPLIDAR_SDK_PATH}/include
 ${RPLIDAR_SDK_PATH}/src
 )
 
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+
+add_library(${PROJECT_NAME} SHARED
+	src/hector_slam.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+	${Boost_LIBRARIES}
+	${OpenCV_LIBS})
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 add_executable(hector_mapping
-  src/hector_slam.cpp
-  src/node.cpp
-  ${RPLIDAR_SDK_SRC}
-)
-add_executable(main
-        src/hector_slam.cpp
-        src/main.cpp
-        ${RPLIDAR_SDK_SRC}
-)
-target_link_libraries(main
-        ${Boost_LIBRARIES}
-        ${OpenCV_LIBS}
-        )
-
-add_executable(testparam src/testparam.cpp)
-target_link_libraries(testparam
-        ${OpenCV_LIBS}
-        )
+	src/node.cpp
+	${RPLIDAR_SDK_SRC})
 target_link_libraries(hector_mapping
-  ${Boost_LIBRARIES}
-  ${OpenCV_LIBS}
-)
+	${PROJECT_NAME})
+
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+
+add_executable(main
+	test/main.cpp
+	${RPLIDAR_SDK_SRC})
+target_link_libraries(main
+	${PROJECT_NAME})
+
+
+add_executable(testparam test/testparam.cpp)
+target_link_libraries(testparam
+	${OpenCV_LIBS})
+
 

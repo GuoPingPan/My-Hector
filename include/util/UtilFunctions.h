@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef utilfunctions_h__
-#define utilfunctions_h__
+#ifndef UTIL_FUNCTIONS_H_
+#define UTIL_FUNCTIONS_H_
 
 #include <cmath>
 //#include <tf/LinearMath/Transform.h>
@@ -102,6 +102,6 @@ static double getYawFromQuat(const Eigen::Quaterniond &quat)
 }
 
 
-}
+}// namespace util
 
-#endif
+#endif// UTIL_FUNCTIONS_H_
