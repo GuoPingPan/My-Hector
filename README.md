@@ -4,7 +4,8 @@
 
 ### MyHector整体结构图      [(算法原理详解)](https://gitee.com/guopingpan/my_-hector)
 
-![image](https://upload-images.jianshu.io/upload_images/23877926-9c051770525d62ed.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](image.png)
+
 ### 使用说明
 
 #### 一、环境搭配
